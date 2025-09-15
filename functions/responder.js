@@ -1,30 +1,23 @@
 const fetch = require('node-fetch');
 
-// This function simulates fetching the unique business context.
 function getBusinessContext() {
     return {
         businessName: "Orchard Dental Care",
         responderName: "Sarah",
         responseTone: "Warm, friendly, and sincere",
-        // NEW: Now an array of multiple, curated style guide examples
         styleGuideExamples: [
-
             "Thank you for the kind review Carolyn! always such a pleasure seeing you and your family :) Thanks again, Orchard Dental Care Team",
             "Thank you for the kind review Nojan! it is always such a pleasure having you in the office, we're just as happy you found us as well :)Thanks again,Orchard Dental CareTeam",
-            "Such a kind review! thank you so much for acknowledging all our hard work, we all take pride in our work. It was such a pleasure seeing you in the office :) thank you for trusting 2000 Yonge Dental with your dental care :) Thanks again, Orchard Dental Care Team"
-          "Thank you so much for choosing Orchard Dental Care, we all take pride in our work at the office and it is always such a pleasure seeing you! Thanks again, Orchard Dental CareT eam"
-           "Thank you for such a kind review Phil, Alex and the rest of the staff always enjoy seeing you in the office, and we're happy you enjoy our mascots just as much as we do :) Thanks again, Orchard Dental Care Team"
-
+            "Such a kind review! thank you so much for acknowledging all our hard work, we all take pride in our work. It was such a pleasure seeing you in the office :) thank you for trusting 2000 Yonge Dental with your dental care :) Thanks again, Orchard Dental Care Team",
+            "Thank you so much for choosing Orchard Dental Care, we all take pride in our work at the office and it is always such a pleasure seeing you! Thanks again, Orchard Dental CareT eam",
+            "Thank you for such a kind review Phil, Alex and the rest of the staff always enjoy seeing you in the office, and we're happy you enjoy our mascots just as much as we do :) Thanks again, Orchard Dental Care Team"
         ],
         serviceRecoveryOffer: "a complimentary cleaning on your next visit"
     };
 }
 
-// This function now correctly builds the prompt with multiple examples.
 function buildSystemPrompt(context, review) {
-    // Format the array of examples into a clean, numbered list for the AI
     const formattedExamples = context.styleGuideExamples.map((ex, index) => `${index + 1}. ${ex}`).join('\n');
-
     return `You are a sophisticated AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
 
     **Your Persona & Goal:**
