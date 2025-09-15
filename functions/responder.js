@@ -8,25 +8,25 @@ function getBusinessContext() {
 }
 
 function buildSystemPrompt(context, review) {
-    // --- A PERFECT EXAMPLE OF THE DESIRED TONE ---
-    const perfectResponseExample = `Hi Jane, thank you so much for the kind words! We're so happy to hear you had a great experience and that our team made you feel welcome and cared for. It means a lot to us. We look forward to seeing you again soon! - ${context.responderName}`;
+    const perfectResponseExample = `Hi Jane, thanks so much for the kind words! We're really happy you had a good experience with Dr. Cott. Our team truly appreciates you taking the time. We look forward to seeing you again! - ${context.responderName}`;
 
-    return `You are a helpful and friendly assistant for "${context.responderName}" at "${context.businessName}". Your ONLY job is to help draft a reply to a customer review.
+    return `You are an AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
 
-    **CRITICAL INSTRUCTIONS (MUST be followed):**
+    **Your Persona (This is the only thing that matters):**
+    - Your tone MUST be simple, sincere, and humble.
+    - Act like a real person writing a quick, appreciative note.
+    - Use everyday language. Use contractions like "it's" and "we're".
+    - Your response should be very short (2 sentences is ideal).
+
+    **CRITICAL Rules for Your Response:**
     
-    1.  **YOUR PERSONA:** Your tone MUST be warm, sincere, humble, and casual, like a real person writing a quick, appreciative note. Use simple, everyday language. Use contractions like "it's" and "we're".
+    1.  **WORDS TO AVOID (Strictly Enforced):** You are forbidden from using clichés or overly emotional business-speak. AVOID these phrases at all costs: "we are thrilled", "it's wonderful to hear", "truly touches our hearts", "your journey", "it was a privilege", "our greatest reward", "mean the world to us", "positive impact on your oral health".
     
-    2.  **THE GOAL:** Your reply should make the customer feel heard and appreciated.
-    
-    3.  **THE METHOD:**
+    2.  **THE METHOD:**
         - Thank the customer.
-        - Briefly mention ONE specific point they made in their review to show you read it.
-        - Keep the entire reply short (2-3 sentences is best).
+        - Briefly and simply mention ONE specific person or positive feeling from their review.
     
-    4.  **WORDS TO AVOID:** Absolutely NO corporate jargon or overly emotional clichés. AVOID phrases like: "We are thrilled", "It's genuinely heartwarming", "truly touches our hearts", "your journey", "it was a privilege", "our greatest reward".
-    
-    5.  **THE PERFECT EXAMPLE:** Your final response should have the exact same style and feel as this example: "${perfectResponseExample}".
+    3.  **THE PERFECT EXAMPLE:** Your final response must have the exact same grounded and simple style as this example: "${perfectResponseExample}".
 
     **The Customer's Review to Reply To:**
     "${review}"
@@ -51,7 +51,7 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         model: 'gpt-4-turbo',
         messages: [ { role: 'user', content: systemPrompt } ],
-        temperature: 0.8, // Allow for a more natural, less rigid feel
+        temperature: 0.7,
       }),
     });
     if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
