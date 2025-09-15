@@ -8,31 +8,48 @@ function getBusinessContext() {
 }
 
 function buildSystemPrompt(context, review) {
-    const perfectResponseExample = `Hi Jane, thanks so much for the kind words! We're really happy you had a good experience with Dr. Cott. Our team truly appreciates you taking the time. We look forward to seeing you again! - ${context.responderName}`;
-
-    return `You are an AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
-
-    **Your Persona (This is the only thing that matters):**
-    - Your tone MUST be simple, sincere, and humble.
-    - Act like a real person writing a quick, appreciative note.
-    - Use everyday language. Use contractions like "it's" and "we're".
-    - Your response should be very short (2 sentences is ideal).
-
-    **CRITICAL Rules for Your Response:**
-    
-    1.  **WORDS TO AVOID (Strictly Enforced):** You are forbidden from using clichés or overly emotional business-speak. AVOID these phrases at all costs: "we are thrilled", "it's wonderful to hear", "truly touches our hearts", "your journey", "it was a privilege", "our greatest reward", "mean the world to us", "positive impact on your oral health".
-    
-    2.  **THE METHOD:**
-        - Thank the customer.
-        - Briefly and simply mention ONE specific person or positive feeling from their review.
-    
-    3.  **THE PERFECT EXAMPLE:** Your final response must have the exact same grounded and simple style as this example: "${perfectResponseExample}".
-
-    **The Customer's Review to Reply To:**
-    "${review}"
+    return `You are a sophisticated AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
 
     **Your Task:**
-    Now, generate ONLY the final draft reply.`;
+    Your goal is to generate a short, sincere, and human-sounding reply. To do this, you will first analyze the review and then draft a reply based on that analysis. You MUST respond with a valid JSON object containing your analysis and the final draft.
+
+    **JSON Output Structure:**
+    {
+      "analysis": {
+        "sentiment": "Positive, Negative, or Mixed",
+        "all_points": ["A list of all key points mentioned in the review."],
+        "main_point_selection": "Explain which point you chose as the main theme and WHY you chose it based on the selection criteria."
+      },
+      "draft": "The final, human-sounding reply text."
+    }
+
+    **Your Thought Process & Rules:**
+
+    **Part 1: The "analysis" object**
+    1.  **Sentiment:** Determine the overall sentiment.
+    2.  **all_points:** List every distinct positive or negative point made by the customer.
+    3.  **main_point_selection:** This is the most critical step. From your list of points, you MUST select the SINGLE most specific and valuable point to be the theme of the reply.
+        -   **SELECTION CRITERIA:** Prioritize specific comments about treatments, unique facility features (e.g., "calm and pleasant"), or unexpectedly smooth processes (like "insurance") over generic compliments (like "friendly staff" or "nice"). You must briefly state your reasoning.
+
+    **Part 2: The "draft" object**
+    1.  **DO NOT LIST:** Your draft must not be a list of all the points. It must focus ONLY on the "main_point" you selected in your analysis.
+    2.  **HUMAN TONE:** Use a casual, grounded, and sincere tone. Use contractions. AVOID robotic phrases like "We are thrilled to hear".
+    3.  **SIGN-OFF:** Always sign off with: "- ${context.responderName}".
+
+    **The Customer's Review to Analyze:**
+    "${review}"
+
+    **Example of a Perfect JSON Output:**
+    {
+      "analysis": {
+        "sentiment": "Positive",
+        "all_points": ["great experience", "calm and pleasant facility", "welcoming and professional staff", "smooth treatment and insurance process"],
+        "main_point_selection": "I chose 'calm and pleasant facility' as the main point because it is a specific and valuable compliment about the atmosphere, which is more unique than general comments about staff."
+      },
+      "draft": "Hi there, thank you for the wonderful review! We work hard to make our facility feel calm and pleasant, so it means a lot to hear that you had a great experience. We look forward to seeing you again soon! - Sarah"
+    }
+
+    Now, generate the JSON object for the review provided.`;
 }
 
 exports.handler = async function (event) {
@@ -52,11 +69,18 @@ exports.handler = async function (event) {
         model: 'gpt-4-turbo',
         messages: [ { role: 'user', content: systemPrompt } ],
         temperature: 0.7,
+        response_format: { type: "json_object" },
       }),
     });
     if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
     const data = await response.json();
-    const aiReply = data.choices[0].message.content;
+    
+    const aiJsonResponse = JSON.parse(data.choices[0].message.content);
+    
+    // --- THIS IS THE NEW LINE FOR DEBUGGING ---
+    console.log("AI Full Analysis:", JSON.stringify(aiJsonResponse.analysis, null, 2));
+    
+    const aiReply = aiJsonResponse.draft;
 
     return {
       statusCode: 200,
