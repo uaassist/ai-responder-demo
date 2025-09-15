@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Response Assistant - Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <h1>AI Response Assistant</h1>
+            <p>Instantly draft professional, on-brand replies to your Google reviews.</p>
+        </header>
+
+        <div class="card">
+            <h2>1. Paste a Customer Review</h2>
+            <p>Enter any review from your Google Business Profile below.</p>
+            <textarea id="review-input" placeholder="e.g., “Had a great experience. The facility is calm and pleasant. The staff are welcoming and professional...”"></textarea>
+        </div>
+
+        <div class="card">
+            <h2>2. Generate AI Draft</h2>
+            <p>Our AI will analyze the review and generate a personalized response based on your business's pre-set tone and recovery offers.</p>
+            <button id="generate-button">✨ Draft Reply with AI</button>
+        </div>
+
+        <div class="card result-card" id="result-container" style="display: none;">
+            <h2>3. Your AI-Generated Draft</h2>
+            <p>You can edit the text below before posting.</p>
+            <div id="loading-spinner" style="display: none;"></div>
+            <textarea id="draft-output"></textarea>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
