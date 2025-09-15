@@ -69,16 +69,17 @@ exports.handler = async function (event) {
         model: 'gpt-4-turbo',
         messages: [ { role: 'user', content: systemPrompt } ],
         temperature: 0.7,
-        response_format: { type: "json_object" }, // Force the AI to output JSON
+        response_format: { type: "json_object" },
       }),
     });
     if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
     const data = await response.json();
     
-    // Parse the JSON string from the AI
     const aiJsonResponse = JSON.parse(data.choices[0].message.content);
     
-    // Extract just the draft to send back to the frontend
+    // --- THIS IS THE NEW LINE FOR DEBUGGING ---
+    console.log("AI Full Analysis:", JSON.stringify(aiJsonResponse.analysis, null, 2));
+    
     const aiReply = aiJsonResponse.draft;
 
     return {
