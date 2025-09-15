@@ -4,34 +4,52 @@ function getBusinessContext() {
     return {
         businessName: "Orchard Dental Care",
         responderName: "Sarah",
-        responseTone: "Warm, friendly, and sincere",
     };
 }
 
 function buildSystemPrompt(context, review) {
-    const goodResponseExample = `Hi Jane, thanks for the kind words! We're so glad you had a great experience and that the team made you feel welcome. We look forward to seeing you again soon! - ${context.responderName}`;
-
-    return `You are an AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review. Your goal is to write a short, sincere, and human-sounding reply.
-
-    **Your Thought Process (You MUST follow these steps):**
-    1.  **Analyze the Review:** Read the customer's review and identify all the positive points they mentioned.
-    2.  **Select ONE Point:** From the list of positive points, you MUST choose only the SINGLE most personal and important one to focus on. For a dental clinic, "welcoming team" or "caring dentist" is more personal than "clean facility" or "central location."
-    3.  **Draft the Reply:** Write a short, conversational reply that thanks the customer and ONLY mentions the single point you selected in step 2.
-    4.  **Final Check:** Review your draft. Does it sound like a real person? Does it avoid listing multiple points? If not, rewrite it until it does.
-
-    **CRITICAL Rules for the Final Output:**
-    -   **DO NOT LIST:** The final output must not list multiple positive points. This is the most important rule.
-    -   **TONE:** The tone must be ${context.responseTone}. Use contractions.
-    -   **WORDS TO AVOID:** Do not use robotic phrases like "Thank you for taking the time", "We are thrilled to hear", "It’s wonderful to know".
-    -   **SIGN-OFF:** Always sign off with: "- ${context.responderName}".
-
-    **Style Guide (A Perfect Response):** "${goodResponseExample}"
-
-    **The Customer's Review to Reply To:**
-    "${review}"
+    return `You are a sophisticated AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
 
     **Your Task:**
-    Now, provide ONLY the final draft reply. Do not show your thought process, just the final result.`;
+    Your goal is to generate a short, sincere, and human-sounding reply. To do this, you will first analyze the review and then draft a reply based on that analysis. You MUST respond with a valid JSON object containing your analysis and the final draft.
+
+    **JSON Output Structure:**
+    {
+      "analysis": {
+        "sentiment": "Positive, Negative, or Mixed",
+        "all_points": ["A list of all key points mentioned in the review."],
+        "main_point_selection": "Explain which point you chose as the main theme and WHY you chose it based on the selection criteria."
+      },
+      "draft": "The final, human-sounding reply text."
+    }
+
+    **Your Thought Process & Rules:**
+
+    **Part 1: The "analysis" object**
+    1.  **Sentiment:** Determine the overall sentiment.
+    2.  **all_points:** List every distinct positive or negative point made by the customer.
+    3.  **main_point_selection:** This is the most critical step. From your list of points, you MUST select the SINGLE most specific and valuable point to be the theme of the reply.
+        -   **SELECTION CRITERIA:** Prioritize specific comments about treatments, unique facility features (e.g., "calm and pleasant"), or unexpectedly smooth processes (like "insurance") over generic compliments (like "friendly staff" or "nice"). You must briefly state your reasoning.
+
+    **Part 2: The "draft" object**
+    1.  **DO NOT LIST:** Your draft must not be a list of all the points. It must focus ONLY on the "main_point" you selected in your analysis.
+    2.  **HUMAN TONE:** Use a casual, grounded, and sincere tone. Use contractions. AVOID robotic phrases like "We are thrilled to hear".
+    3.  **SIGN-OFF:** Always sign off with: "- ${context.responderName}".
+
+    **The Customer's Review to Analyze:**
+    "${review}"
+
+    **Example of a Perfect JSON Output:**
+    {
+      "analysis": {
+        "sentiment": "Positive",
+        "all_points": ["great experience", "calm and pleasant facility", "welcoming and professional staff", "smooth treatment and insurance process"],
+        "main_point_selection": "I chose 'calm and pleasant facility' as the main point because it is a specific and valuable compliment about the atmosphere, which is more unique than general comments about staff."
+      },
+      "draft": "Hi there, thank you for the wonderful review! We work hard to make our facility feel calm and pleasant, so it means a lot to hear that you had a great experience. We look forward to seeing you again soon! - Sarah"
+    }
+
+    Now, generate the JSON object for the review provided.`;
 }
 
 exports.handler = async function (event) {
@@ -40,7 +58,6 @@ exports.handler = async function (event) {
   }
   
   const { reviewText } = JSON.parse(event.body);
-  
   const businessContext = getBusinessContext();
   const systemPrompt = buildSystemPrompt(businessContext, reviewText);
 
@@ -51,12 +68,18 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         model: 'gpt-4-turbo',
         messages: [ { role: 'user', content: systemPrompt } ],
-        temperature: 0.7, // Lowering temperature to make it follow the strict rules more closely
+        temperature: 0.7,
+        response_format: { type: "json_object" }, // Force the AI to output JSON
       }),
     });
     if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
     const data = await response.json();
-    const aiReply = data.choices[0].message.content;
+    
+    // Parse the JSON string from the AI
+    const aiJsonResponse = JSON.parse(data.choices[0].message.content);
+    
+    // Extract just the draft to send back to the frontend
+    const aiReply = aiJsonResponse.draft;
 
     return {
       statusCode: 200,
