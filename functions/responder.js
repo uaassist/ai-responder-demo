@@ -1,55 +1,55 @@
 const fetch = require('node-fetch');
 
+// This function simulates fetching the unique business context.
 function getBusinessContext() {
     return {
         businessName: "Orchard Dental Care",
         responderName: "Sarah",
+        responseTone: "Warm, friendly, and sincere",
+        // NEW: Now an array of multiple, curated style guide examples
+        styleGuideExamples: [
+
+            "Thank you for the kind review Carolyn! always such a pleasure seeing you and your family :) Thanks again, Orchard Dental Care Team",
+            "Thank you for the kind review Nojan! it is always such a pleasure having you in the office, we're just as happy you found us as well :)Thanks again,Orchard Dental CareTeam",
+            "Such a kind review! thank you so much for acknowledging all our hard work, we all take pride in our work. It was such a pleasure seeing you in the office :) thank you for trusting 2000 Yonge Dental with your dental care :) Thanks again, Orchard Dental Care Team"
+          "Thank you so much for choosing Orchard Dental Care, we all take pride in our work at the office and it is always such a pleasure seeing you! Thanks again, Orchard Dental CareT eam"
+           "Thank you for such a kind review Phil, Alex and the rest of the staff always enjoy seeing you in the office, and we're happy you enjoy our mascots just as much as we do :) Thanks again, Orchard Dental Care Team"
+
+        ],
+        serviceRecoveryOffer: "a complimentary cleaning on your next visit"
     };
 }
 
+// This function now correctly builds the prompt with multiple examples.
 function buildSystemPrompt(context, review) {
+    // Format the array of examples into a clean, numbered list for the AI
+    const formattedExamples = context.styleGuideExamples.map((ex, index) => `${index + 1}. ${ex}`).join('\n');
+
     return `You are a sophisticated AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
 
-    **Your Task:**
-    Your goal is to generate a short, sincere, and human-sounding reply. To do this, you will first analyze the review and then draft a reply based on that analysis. You MUST respond with a valid JSON object containing your analysis and the final draft.
+    **Your Persona & Goal:**
+    Your primary goal is to write a short, sincere, and human-sounding reply that perfectly matches the business's brand voice.
 
-    **JSON Output Structure:**
-    {
-      "analysis": {
-        "sentiment": "Positive, Negative, or Mixed",
-        "all_points": ["A list of all key points mentioned in the review."],
-        "main_point_selection": "Explain which point you chose as the main theme and WHY you chose it based on the selection criteria."
-      },
-      "draft": "The final, human-sounding reply text."
-    }
+    **CRITICAL Style Guide (This is the most important rule):**
+    Your response MUST match the overall style, tone, and vocabulary of the following real response examples, which were provided by the business owner. Do not copy them directly, but capture their essence.
 
-    **Your Thought Process & Rules:**
+    **Real Response Examples:**
+    ${formattedExamples}
 
-    **Part 1: The "analysis" object**
-    1.  **Sentiment:** Determine the overall sentiment.
-    2.  **all_points:** List every distinct positive or negative point made by the customer.
-    3.  **main_point_selection:** This is the most critical step. From your list of points, you MUST select the SINGLE most specific and valuable point to be the theme of the reply.
-        -   **SELECTION CRITERIA:** Prioritize specific comments about treatments, unique facility features (e.g., "calm and pleasant"), or unexpectedly smooth processes (like "insurance") over generic compliments (like "friendly staff" or "nice"). You must briefly state your reasoning.
+    **Your Thought Process (Follow Strictly):**
+    1.  **Analyze the Review:** Determine the sentiment (Positive, Negative, Mixed) and identify the SINGLE most important point the customer made.
+    2.  **Draft the Reply:** Write a short, conversational reply that thanks the customer and ONLY mentions the single most important point you identified. Do NOT list multiple points from the review.
 
-    **Part 2: The "draft" object**
-    1.  **DO NOT LIST:** Your draft must not be a list of all the points. It must focus ONLY on the "main_point" you selected in your analysis.
-    2.  **HUMAN TONE:** Use a casual, grounded, and sincere tone. Use contractions. AVOID robotic phrases like "We are thrilled to hear".
-    3.  **SIGN-OFF:** Always sign off with: "- ${context.responderName}".
+    **CRITICAL Rules for Your Response:**
+    -   **TONE:** The tone must be ${context.responseTone}.
+    -   **WORDS TO AVOID:** Do NOT use overly formal or robotic business phrases like: "Dear valued patient", "Thank you for taking the time", "We are thrilled to hear".
+    -   **SIGN-OFF:** Always sign off with: "- ${context.responderName}".
 
-    **The Customer's Review to Analyze:**
+    **The Customer's Review to Reply To:**
     "${review}"
 
-    **Example of a Perfect JSON Output:**
-    {
-      "analysis": {
-        "sentiment": "Positive",
-        "all_points": ["great experience", "calm and pleasant facility", "welcoming and professional staff", "smooth treatment and insurance process"],
-        "main_point_selection": "I chose 'calm and pleasant facility' as the main point because it is a specific and valuable compliment about the atmosphere, which is more unique than general comments about staff."
-      },
-      "draft": "Hi there, thank you for the wonderful review! We work hard to make our facility feel calm and pleasant, so it means a lot to hear that you had a great experience. We look forward to seeing you again soon! - Sarah"
-    }
-
-    Now, generate the JSON object for the review provided.`;
+    **Your Task:**
+    Now, generate ONLY the draft reply.`;
 }
 
 exports.handler = async function (event) {
@@ -58,6 +58,7 @@ exports.handler = async function (event) {
   }
   
   const { reviewText } = JSON.parse(event.body);
+  
   const businessContext = getBusinessContext();
   const systemPrompt = buildSystemPrompt(businessContext, reviewText);
 
@@ -68,19 +69,12 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         model: 'gpt-4-turbo',
         messages: [ { role: 'user', content: systemPrompt } ],
-        temperature: 0.7,
-        response_format: { type: "json_object" },
+        temperature: 0.75,
       }),
     });
     if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
     const data = await response.json();
-    
-    const aiJsonResponse = JSON.parse(data.choices[0].message.content);
-    
-    // --- THIS IS THE NEW LINE FOR DEBUGGING ---
-    console.log("AI Full Analysis:", JSON.stringify(aiJsonResponse.analysis, null, 2));
-    
-    const aiReply = aiJsonResponse.draft;
+    const aiReply = data.choices[0].message.content;
 
     return {
       statusCode: 200,
