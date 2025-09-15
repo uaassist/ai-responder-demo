@@ -4,8 +4,7 @@ function getBusinessContext() {
     return {
         businessName: "Orchard Dental Care",
         responderName: "Sarah",
-        responseTone: "Warm, friendly, and appreciative",
-        serviceRecoveryOffer: "a complimentary cleaning on your next visit"
+        responseTone: "Warm, friendly, and sincere",
     };
 }
 
@@ -13,43 +12,24 @@ function buildSystemPrompt(context, review) {
     // A Style Guide Example for the AI
     const goodResponseExample = `Hi Jane, thanks so much for the kind words! We're so happy to hear you had a great experience and that you found the clinic clean and welcoming. Our team tries their best to make everyone feel cared for. We look forward to seeing you again soon! - ${context.responderName}`;
 
-    return `You are a highly-trained AI assistant for "${context.businessName}". Your task is to help the business owner, "${context.responderName}", draft a professional, empathetic, and brand-aligned reply to a customer review.
+    return `You are an AI assistant helping "${context.responderName}" from "${context.businessName}" draft a reply to a customer review.
 
-    **Your Persona & Tone:**
-    - Your tone MUST be: ${context.responseTone}.
-    - Act like a real person, not a corporate robot. Use a sincere and appreciative voice.
-    - Use contractions like "we're" and "it's" to sound natural.
-    - **Your Style Guide:** Your response should sound like this example: "${goodResponseExample}".
+    **Your Persona & Goal:**
+    Your goal is to write a short, sincere, and human-sounding reply. Act like a real person who has just read a kind review, not a corporate robot. Your tone must be: ${context.responseTone}.
 
-    **Your Analytical Process (Follow Strictly):**
-    1.  **Deconstruct the Review:**
-        a.  **Sentiment:** Is the review Positive, Negative, or Mixed?
-        b.  **Identify Mentions:** What specific services or products are mentioned? (e.g., "cleaning," "filling," "dentures").
-        c.  **Extract Tokens:** What specific names of people or places are mentioned? (e.g., "Dr. Evans," "the front desk").
-    2.  **Generate Response Based on Analysis:** Based on the sentiment, construct a reply.
+    **CRITICAL Rules for Your Response:**
+    1.  **BE HUMAN, NOT A ROBOT:** Use short, conversational sentences. Use contractions like "we're" and "it's".
+    2.  **DO NOT LIST:** Do not simply repeat a list of the positive things the customer mentioned. Instead, pick ONE specific point from their review and mention it naturally as part of your thank you.
+    3.  **WORDS TO AVOID:** Do NOT use overly formal or robotic business phrases like: "Dear valued patient", "Thank you for taking the time", "We are thrilled to hear", "It’s wonderful to know", "We appreciate your recommendation".
+    4.  **SIGN-OFF:** Always sign off with just the first name: "- ${context.responderName}".
 
-    **Your Response Strategies (Follow Strictly):**
-    *   **For a Positive Review:**
-        1.  **Gratitude:** Thank the customer personally.
-        2.  **Reinforce the Positive:** Specifically mention at least one positive "Mention" or "Token" they provided (e.g., "We're so glad you were happy with the care from Dr. Evans.").
-        3.  **Closing:** Add a warm closing and invite them back.
-        4.  **Sign-off:** End with "- ${context.responderName}".
-    *   **For a Negative Review:**
-        1.  **Acknowledge & Apologize:** Apologize sincerely for the negative experience. Never be defensive.
-        2.  **Show You've Listened:** Acknowledge their specific "Mention" or "Token" (e.g., "We're very sorry to hear that the wait time was too long...").
-        3.  **Take Responsibility & Recover:** State that this is not your standard. Offer to make it right: "${context.serviceRecoveryOffer}".
-        4.  **Take it Offline:** Provide a contact method (e.g., "Please email us at help@orcharddental.com so we can discuss this further.").
-        5.  **Sign-off:** End with "- ${context.responderName}".
-    *   **For a Mixed Review:**
-        1.  **Address the Negative First:** Always start by acknowledging and apologizing for the negative point.
-        2.  **Appreciate the Positive:** Then, thank them for the positive feedback they included.
-        3.  **Sign-off:** End with "- ${context.responderName}".
+    **Style Guide:** Your response should sound like this perfect example: "${goodResponseExample}".
 
     **The Customer's Review to Reply To:**
     "${review}"
 
     **Your Task:**
-    Now, generate ONLY the draft reply. Do not add any extra commentary or introductory phrases.`;
+    Now, generate ONLY the draft reply.`;
 }
 
 exports.handler = async function (event) {
@@ -69,7 +49,7 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         model: 'gpt-4-turbo',
         messages: [ { role: 'user', content: systemPrompt } ],
-        temperature: 0.7,
+        temperature: 0.8, // Higher temperature for more natural, less repetitive phrasing
       }),
     });
     if (!response.ok) { const errorData = await response.json(); throw new Error(JSON.stringify(errorData)); }
